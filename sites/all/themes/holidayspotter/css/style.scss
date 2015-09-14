@@ -2269,7 +2269,7 @@ table .mini-day-on a:hover {
       margin: 0 auto;
       margin-bottom: 20px;
       .views-field-title {
-        background: $groen;
+        background: $paars;
         a {
           color: #fff;
         }
@@ -2279,16 +2279,11 @@ table .mini-day-on a:hover {
       }
       .views-field-field-categorie {
         position: absolute;
-        background: $pink;
+        background: #1fb4e5;
         color: #fff;
-        bottom: 0;
-        right: 15px;
-        height: 90px;
-        padding: 45px 5px 5px 28px;
-        width: 90px;
-        border-radius: 90px 0px 0 0;
-        -moz-border-radius: 90px 0px 0 0;
-        -webkit-border-radius: 90px 0px 0 0;
+        bottom: 53px;
+        padding: 5px 25px;
+        border-top-right-radius: 10px;
       }
 
     }

@@ -1773,23 +1773,18 @@ table .mini-day-on a:hover {
     margin: 0 auto;
     margin-bottom: 20px; }
     #block-system-main .view-tips-tricks .views-row .views-field-title {
-      background: #99c221; }
+      background: #704895; }
       #block-system-main .view-tips-tricks .views-row .views-field-title a {
         color: #fff; }
       #block-system-main .view-tips-tricks .views-row .views-field-title a:hover {
         color: #fff; }
     #block-system-main .view-tips-tricks .views-row .views-field-field-categorie {
       position: absolute;
-      background: #f4416b;
+      background: #1fb4e5;
       color: #fff;
-      bottom: 0;
-      right: 15px;
-      height: 90px;
-      padding: 45px 5px 5px 28px;
-      width: 90px;
-      border-radius: 90px 0px 0 0;
-      -moz-border-radius: 90px 0px 0 0;
-      -webkit-border-radius: 90px 0px 0 0; }
+      bottom: 53px;
+      padding: 5px 25px;
+      border-top-right-radius: 10px; }
 
 #block-views-tips-tricks-block,
 #block-views-tips-tricks-block-3 {
