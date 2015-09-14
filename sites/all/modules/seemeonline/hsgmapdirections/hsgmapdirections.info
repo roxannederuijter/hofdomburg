@@ -1,0 +1,7 @@
+name = Holidayspot Gmap Directions
+package = Location
+description = Adds directions support to gmap
+core = 7.x
+version = 2.0
+dependencies[] = gmap
+dependencies[] = location

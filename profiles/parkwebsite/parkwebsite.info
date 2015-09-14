@@ -1,0 +1,106 @@
+name = Seemeonline Parkwebsite Whitelabel
+description = Install with commonly used features pre-configured.
+version = VERSION
+core = 7.x
+
+dependencies[] = block
+dependencies[] = color
+dependencies[] = contextual
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = dblog
+dependencies[] = search
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+dependencies[] = entity
+dependencies[] = file_entity
+dependencies[] = job_scheduler
+dependencies[] = location
+dependencies[] = diff
+
+dependencies[] = features
+
+dependencies[] = admin_menu
+dependencies[] = admin_menu_toolbar
+
+dependencies[] = ckeditor
+dependencies[] = ctools
+dependencies[] = devel
+dependencies[] = email
+dependencies[] = globalredirect
+dependencies[] = honeypot
+dependencies[] = l10n_update
+dependencies[] = libraries
+dependencies[] = link
+dependencies[] = media
+
+
+dependencies[] = metatag
+dependencies[] = path_metatags
+
+dependencies[] = module_filter
+dependencies[] = pathauto
+dependencies[] = redirect
+dependencies[] = strongarm
+dependencies[] = superfish
+dependencies[] = token
+dependencies[] = uh_views_responsive
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = views_slideshow
+dependencies[] = webform
+dependencies[] = xmlsitemap
+dependencies[] = page_title
+dependencies[] = fe_block
+dependencies[] = features_diff
+dependencies[] = media_wysiwyg
+dependencies[] = date
+dependencies[] = search_api_solr
+
+dependencies[] = better_exposed_filters
+dependencies[] = block_class
+dependencies[] = entityreference
+dependencies[] = feeds
+dependencies[] = feeds_tamper
+dependencies[] = feeds_xpathparser
+; dependencies[] = flag
+dependencies[] = htaccess
+dependencies[] = webform
+;dependencies[] = search_api
+;dependencies[] = search_api_db
+dependencies[] = site_map
+;dependencies[] = search_api_page
+dependencies[] = transliteration
+dependencies[] = ultimate_cron
+dependencies[] = variable
+dependencies[] = advagg
+dependencies[] = colorbox
+dependencies[] = gmap
+
+dependencies[] = date_popup
+dependencies[] = date_views
+dependencies[] = feeds_tamper_ui
+dependencies[] = feeds_ui
+dependencies[] = path_metatags_ui
+;dependencies[] = search_api_views
+dependencies[] = variable_admin
+dependencies[] = views_slideshow_cycle
+dependencies[] = xmlsitemap_menu
+dependencies[] = xmlsitemap_node
+dependencies[] = focal_point
+dependencies[] = viewfield
+
+
+
+; Information added by Drupal.org packaging script on 2014-11-19
+version = "7.34"
+project = "drupal"
+datestamp = "1416429488"
+

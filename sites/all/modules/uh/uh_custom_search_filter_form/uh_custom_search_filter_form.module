@@ -1,0 +1,281 @@
+<?php
+
+function uh_custom_search_filter_form_init() {
+  drupal_add_js(drupal_get_path('module', 'uh_custom_search_filter_form') .'/scripts/search.js');
+
+
+}
+
+function uh_custom_search_filter_form_menu() {
+
+  $items = array();
+
+  $items['admin/get/availability'] = array(
+    'page callback' => '_get_availability_json',
+    'access arguments' => array('access content')
+   );
+  //dpm($items);
+  return $items;
+}
+
+
+function uh_custom_search_filter_form_block_info() {
+  $blocks = array();
+
+  $blocks['custom_search_block'] = array(
+    'info' => t('Custom search filter'),
+    'title' => t('Custom search filter'),
+  );
+
+  return $blocks;
+}
+
+function uh_custom_search_filter_form_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'custom_search_block' :
+      $block['content'] = uh_custom_search_filter_form_block_content();
+      break;
+  }
+
+  return $block;
+}
+
+function uh_custom_search_filter_form_block_content() {
+  return drupal_get_form('uh_custom_search_filter_form_form');
+}
+
+function _get_availability_json(){
+  return drupal_json_output(_get_availability());
+}
+
+function _get_filters() {
+  $data = array();
+  $data['max_persons'] = isset($_GET['max_persons']) ? $_GET['max_persons'] : '';
+  $data['nights'] = isset($_GET['nights']) ? $_GET['nights'] : 'All';
+  $data['onlydate'] = isset($_GET['onlydate']) ? $_GET['onlydate'] == "1" : false;
+  if(isset($_GET['date']['date'])){
+  $newdate = explode("/", $_GET['date']['date']);
+  $newdate = new \DateTime($newdate[2]."/".$newdate[1]."/".$newdate[0]);
+  $newdate->setTime(0, 0);
+  }
+  //die(var_dump($newdate));
+  $data['date'] = isset($newdate) ? $newdate->format('Y/m/d H:i:s') : ''; //format_date(REQUEST_TIME, 'custom', 'Y/m/d 00:00:00');
+  $data['isEmpty'] = $data['max_persons'] == '' && $data['nights'] == '';
+  //var_dump($data['date']);
+  return $data;
+}
+
+function _get_availability(){
+  $records = array("periodOptions" => array(), "maxpersonsOptions" => array(), "startdateOptions" => array());
+  $totals = array("maxpersonsOptions" => array(), "periodOptions" => array());
+  $filters = _get_filters();
+
+  $query = db_select('eck_availability', 'avail');
+  $query->join('field_data_field_start_date', 'startdate', 'avail.id = startdate.entity_id');
+  $query->join('field_data_field_period', 'period', 'avail.id = period.entity_id');
+  $query->join('field_data_field_accommodation', 'accomodation_avail', 'avail.id = accomodation_avail.entity_id');
+  $query->join('field_data_field_maximum_persons', 'maxpersons', 'accomodation_avail.field_accommodation_target_id = maxpersons.entity_id');
+  $query->leftJoin('taxonomy_term_data', 'taxo', 'period.field_period_tid = taxo.tid');
+  if($filters['date'] != '') {
+    $queryDate = str_replace("/", "-", $filters['date']);
+    $query->condition('startdate.field_start_date_value', $queryDate, '=');
+  }
+  if(!$filters['onlydate']){
+    if($filters['max_persons'] != '')
+      $query->condition('maxpersons.field_maximum_persons_value', $filters['max_persons'], '=');
+    if($filters['nights'] != 'All')
+      $query->condition('period.field_period_tid', $filters['nights'], '=');
+  }
+  $query->fields('avail', array('id'))
+        ->fields('startdate', array('field_start_date_value'))
+        ->fields('period', array('field_period_tid'))
+        ->fields('taxo', array('name', 'weight'))
+        ->fields('maxpersons', array('field_maximum_persons_value'));
+
+  $result = $query->execute();
+  //dpq($query);
+
+  //$records['query'] = $query->getQuery();
+
+  while($record = $result->fetchAssoc()) {
+    if(!isset($records['periodOptions'][$record["field_period_tid"]])){$totals["periodOptions"][$record["field_period_tid"]] = 0;}
+    if(!isset($records['maxpersonsOptions'][$record["field_maximum_persons_value"]])){$totals["maxpersonsOptions"][$record["field_maximum_persons_value"]] = 0;}
+
+    $records['records'][] = $record; // Not needed anymore for searchfields
+    $records['periodOptions'][$record["field_period_tid"]] = array("value" => $record["field_period_tid"], "label" => $record["name"], "weight" => $record["weight"]);
+    $records['maxpersonsOptions'][$record["field_maximum_persons_value"]] = array("value" => $record["field_maximum_persons_value"], "label" => $record["field_maximum_persons_value"]);
+    $records['startdateOptions'][$record["field_start_date_value"]] = array("value" => $record["field_start_date_value"], "label" => $record["field_start_date_value"]);
+
+    $totals["periodOptions"][$record["field_period_tid"]] += 1;
+    $totals["maxpersonsOptions"][$record["field_maximum_persons_value"]] += 1;
+  }
+
+//  foreach($totals as $option => $optionValue){
+//    foreach($optionValue as $optionKey => $count){
+//      if(is_array($records[$option][$optionKey])){
+//        $records[$option][$optionKey]['label'] .= " (".$count.")";
+//      } else {
+//        $records[$option][$optionKey] .= " (".$count.")";
+//      }
+//    }
+//  }
+
+  $records['periodOptions'] = _sort_array($records['periodOptions'], "weight");
+  $records['maxpersonsOptions'] = _sort_array($records['maxpersonsOptions'], "value");
+
+  $records['startdateOptions'] = _sort_array($records['startdateOptions'], "value"); // do this to make index integer starting from 0
+  //$records['firstStartdateOption'] = $records['startdateOptions'][0]['value'];
+  //$records['lastStartdateOption'] = $records['startdateOptions'][count($records['startdateOptions'])-1]['value'];
+
+  return $records;
+}
+
+function _sort_array($array, $value){
+  usort($array, function($a, $b)use($value){
+    if($a[$value] == $b[$value]){return 0;}
+    return $a[$value] < $b[$value] ? -1 : 1;
+  });
+  return $array;
+}
+
+function _flatten_array($array, $key, $value, $prefix = array()){
+  $result = $prefix;
+  foreach($array as $part){
+    $result[$part[$key]] = $part[$value];
+  }
+  return $result;
+}
+
+function uh_custom_search_filter_form_form($form, &$form_state) {
+  $records = _get_availability();
+
+  $date = isset($_GET['date']['date']) ? $_GET['date']['date'] : format_date(REQUEST_TIME, 'custom', 'dd/mm/yy');
+
+  $form['date'] = array(
+    '#prefix' => '<script type="text/javascript">
+      var labelBeschikbaar = "'.t("Beschikbaar").'";
+      var labelNietBeschikbaar = "'.t("Niet beschikbaar").'";
+      var availableDates = '.json_encode($records['startdateOptions']).';
+      </script>',
+    '#type' => 'date_popup',
+    '#title' => t('Aankomstdatum'),
+    '#default_value' => $date,
+    '#date_type' => DATE_DATETIME,
+    '#date_timezone' => date_default_timezone(),
+    '#date_format' => 'd/m/Y',
+    '#date_increment' => 1,
+    '#date_year_range' => '-0:+1',
+  );
+
+
+  $nights = _flatten_array($records['periodOptions'], "value", "label", array("All" => t('Verblijfsduur')));
+
+foreach($nights as $key => $option){
+  if($key != "All"){
+    $nights[$key] = t($option);
+
+    //dpm($nights);
+  }
+}
+  $form['nights'] = array(
+    '#title' => t('Verblijfsduur'),
+    '#type' => 'select',
+    '#options' => $nights,
+    '#default_value' => isset($_GET['field_period']) ? $_GET['field_period'] : ''
+  );
+
+
+  $maxpersons = _flatten_array($records['maxpersonsOptions'], "value", "label", array("" => t('Aantal personen')));
+
+  foreach($maxpersons as $key => $option){
+    if($key != "All"){
+      $maxpersons[$key] = t($option);
+    }
+  }
+
+  $form['max_persons'] = array(
+    '#title' => t('Aantal personen'),
+    '#type' => 'select',
+    '#options' => $maxpersons,
+    '#default_value' => (isset($_GET['field_accommodation_field_maximum_persons']) ? $_GET['field_accommodation_field_maximum_persons'] : '')
+  );
+
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Vinden'),
+  );
+
+  return $form;
+}
+
+function uh_custom_search_filter_form_form_validate($form, &$form_state) {
+
+}
+
+function uh_custom_search_filter_form_form_submit($form, &$form_state) {
+
+  global $language;
+  $lang_name = $language->language;
+
+  $persons = $form_state['input']['max_persons'];
+  $period = $form_state['input']['nights'];
+  $date = $form_state['input']['date']['date'];
+
+
+  $tmpdate = explode("/", $date);
+  $date = $tmpdate[1]."/".$tmpdate[0]."/".$tmpdate[2];
+
+
+  switch ($lang_name) {
+    case 'nl':
+      $form_state['redirect'] = array(
+        'accommodaties',
+        array(
+          'query' =>
+            array(
+              'field_accommodation_field_maximum_persons' => $persons,
+              'field_period' => $period,
+              'field_start_date_1[date]' => $date
+            )
+        )
+      );
+      break;
+    case 'de':
+      $form_state['redirect'] = array(
+        'unterkunfte',
+        array(
+          'query' =>
+            array(
+              'field_accommodation_field_maximum_persons' => $persons,
+              'field_period' => $period,
+              'field_start_date_1[date]' => $date
+            )
+        )
+      );
+      break;
+    case 'en':
+
+      break;
+  }
+}
+
+//function uh_custom_search_filter_form_form_submit($form, &$form_state) {
+//  dpm($form_state);
+//
+//  $persons = $form_state['values']['max_persons'];
+//  $period = $form_state['values']['nights'];
+//  $date = $form_state['values']['date'];
+//
+//  //?field_accommodation_field_maximum_persons=4&field_period=41&field_start_date_1%5Bdate%5D=08%2F14%2F2015
+//
+//  //$form_state['redirect'] = 'het-park/accommodaties?field_accommodation_field_maximum_persons='.$persons.'&field_period='. $period.'&field_start_date_1%5Bdate%5D='.$date;
+//
+//  $form_state['redirect'] = array('het-park/accommodaties',
+//                              array('query' =>
+//                                array('field_accommodation_field_maximum_persons' => $persons,
+//                                      'field_period' => $period,
+//                                      'field_start_date_1[date]' => $date
+//                                      )));
+//}

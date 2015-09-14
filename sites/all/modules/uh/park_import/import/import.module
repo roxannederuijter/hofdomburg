@@ -1,0 +1,180 @@
+<?php
+
+function import_cron() {
+
+  $queue = DrupalQueue::get('entityCreate');
+  $results = _load_acco_info();
+
+  if ($results) {
+    foreach ($results as $item) {
+      $queue->createItem($item);
+    }
+  }
+
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', 'availability', '=')
+    ->propertyCondition('type', 'availability', '=');
+
+  $result = $query->execute();
+
+  if(!isset($result['availability']) || !is_array($result['availability'])){
+    return false;
+  }
+
+  $ids = array();
+  foreach($result['availability'] as $record) {
+    $ids[] = $record->id;
+  }
+  $queue = DrupalQueue::get('entityDelete');
+  if ($ids) {
+    foreach ($ids as $item) {
+      $queue->createItem($item);
+    }
+  }
+
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function import_cron_queue_info() {
+  $queues = array();
+  $queues['entityDelete'] = array(
+    'worker callback' => '_delete_entity', //function to call for each item
+    'time' => 240, //seconds to spend working on the queue
+  );
+  $queues['entityCreate'] = array(
+    'worker callback' => '_create_entity', //function to call for each item
+    'time' => 120, //seconds to spend working on the queue
+  );
+  return $queues;
+}
+
+function _delete_entity($id) {
+  entity_delete('availability', $id);
+}
+
+function _load_acco_info(){
+  $ids = variable_get('accomedaties', 0);
+  //print_r($ids);
+
+  $i = 0;
+  $records = array();
+
+
+  foreach ($ids as $id) {
+    //echo 'id'.$id;
+    if ($id != 0) {
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', 'accomodation')
+        ->fieldCondition('field_object_relephant_id', 'value', $id, '=')
+        ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+      $result = $query->execute();
+
+      if (isset($result['node'])) {
+        $acco_ids = array_keys($result['node']);
+        //print_r($acco_ids);
+      }
+
+      // set external database.
+      db_set_active('parken');
+      // Start select query.
+      $query = db_select('availability', 'p');
+      $query->fields('p', array('acco_id'));
+      $query->fields('p', array('start_date'));
+      $query->fields('p', array('period'));
+      $query->fields('p', array('price'));
+      $query->fields('p', array('regular_price'));
+      $query->fields('p', array('booking_url'));
+      $query->fields('p', array('nights'));
+      $query->fields('p', array('park_id'));
+      $query->fields('p', array('inclusive_price'));
+      $query->fields('p', array('inclusive_discount_price'));
+      // Create expression (acts the same as any db value at sql) and use it.
+      $query->condition('p.acco_id', $id, '=');
+      $result = $query->execute();
+
+      while ($record = $result->fetchAssoc()) {
+
+        $records[$i] = $record;
+        $records[$i]['ids'] = $acco_ids;
+
+        //print_r($records);
+
+        $i++;
+      }
+      db_set_active();
+    }
+  }
+  if ($records) {
+    return $records;
+  }
+}
+
+
+function _create_entity($record) {
+
+  $entity_type = 'availability';
+  $entity = entity_create($entity_type, array('type' => 'availability'));
+  $wrapper = entity_metadata_wrapper($entity_type, $entity);
+
+
+  foreach ($record['ids'] as $id){
+    $node = node_load($id);
+
+    if($node->language == 'nl'){
+      $wrapper->field_accommodation->set($id);
+    }
+    elseif($node->language == 'de'){
+      $wrapper->field_accommodation_de->set($id);
+    }
+    else{
+
+    }
+  }
+
+  $wrapper->field_start_date = strtotime($record['start_date']);
+  $wrapper->field_inclusive_discount_price->set($record['inclusive_discount_price']);
+  $wrapper->field_inclusive_price->set($record['inclusive_price']);
+  $wrapper->field_price->set($record['price']);
+  $wrapper->field_regular_price->set($record['regular_price']);
+  $wrapper->field_acco_id->set($record['acco_id']);
+
+
+  $terms = taxonomy_get_term_by_name($record['period']);
+  if ($terms) {
+    foreach ($terms as $term) {
+      $i = 1;
+      $wrapper->field_period->set($term->tid);
+    }
+  }
+  else {
+    $vid = taxonomy_vocabulary_machine_name_load('period')->vid;
+    taxonomy_term_save((object) array(
+      'name' => $record['period'],
+      'vid' => $vid,
+    ));
+  }
+
+  if (strpos($record['booking_url'], 'https://boeken.roompot.nl/roompot/object') !== FALSE) {
+    if(variable_get('RP-NL', 0) !== 0){
+      $wrapper->field_booking_url->url->set(str_replace('https://boeken.roompot.nl/roompot/object',variable_get('RP-NL', 0),$record['booking_url']));
+      $wrapper->field_booking_url->title->set('Boeken');
+    }
+    if(variable_get('RP-EN', 0) !== 0){
+      $wrapper->field_booking_url_en->url->set(str_replace('https://boeken.roompot.nl/roompot/object',variable_get('RP-EN', 0),$record['booking_url']));
+      $wrapper->field_booking_url_en->title->set('Book');
+    }
+    if(variable_get('RP-DE', 0) !== 0){
+      $wrapper->field_booking_url_de->url->set(str_replace('https://boeken.roompot.nl/roompot/object',variable_get('RP-DE', 0),$record['booking_url']));
+      $wrapper->field_booking_url_de->title->set('Buch');
+    }
+  }
+
+  $wrapper->field_nights->set($record['nights']);
+  $wrapper->field_park_id->set($record['park_id']);
+  $wrapper->save();
+}

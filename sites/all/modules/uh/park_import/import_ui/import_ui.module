@@ -1,0 +1,171 @@
+<?php
+function import_ui_menu() {
+  $items = array();
+
+  $items['admin/config/park-import'] = array(
+    'title' => 'Parken',
+    'description' => 'Configuration for parken',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('import_ui_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+function import_ui_form($form, &$form_state) {
+
+  dpm(variable_get('accomedaties', 0));
+  $form['hoofd'] = array(
+    '#title' => t('RP of HB'),
+    '#type' => 'select',
+    '#description' => t('Select the parken to import.'),
+    '#options' => array(0 => 'RP', 1 => 'HB'),
+    '#default_value' => variable_get('hoofd', 0),
+  );
+
+  $parkids = import_ui_get_parken(variable_get('hoofd'));
+
+  $form['parken'] = array(
+    '#title' => t('Parks'),
+    '#type' => 'checkboxes',
+    '#description' => t('Select the parken to import.'),
+    '#options' => $parkids,
+    '#default_value' => variable_get('parken', 0),
+  );
+
+
+  $accoids = array();
+
+  foreach (variable_get('parken') as $parkid) {
+    if (!$parkid == 0) {
+      $park = import_ui_get_objects($parkid);
+      $accoids += $park['objects'];
+    }
+  }
+
+  $form['accomedaties'] = array(
+    '#title' => t('accomedaties'),
+    '#type' => 'checkboxes',
+    '#description' => t('Select the accos to import.'),
+    '#options' => $accoids,
+    '#default_value' => variable_get('accomedaties', 0),
+  );
+
+  $form['booking_url'] = array(
+    '#title' => t('Custom bookings url'),
+    '#type' => 'container',
+  );
+
+  $form['booking_url']['HB-NL']=array(
+    '#type'=>'textfield',
+    '#title'=>t('HB-NL'),
+    '#description'=>t('voorbeeld url'),
+    '#default_value' => variable_get('HB-NL'),
+  );
+
+  $form['booking_url']['HB-DE']=array(
+    '#type'=>'textfield',
+    '#title'=>t('HB-DE'),
+    '#description'=>t('voorbeeld url'),
+    '#default_value' => variable_get('HB-DE'),
+  );
+
+  $form['booking_url']['HB-EN']=array(
+    '#type'=>'textfield',
+    '#title'=>t('HB-EN'),
+    '#description'=>t('voorbeeld url'),
+    '#default_value' => variable_get('HB-EN'),
+  );
+
+  $form['booking_url']['RP-NL']=array(
+    '#type'=>'textfield',
+    '#title'=>t('RP-NL'),
+    '#description'=>t('voorbeeld url'),
+    '#default_value' => variable_get('RP-NL'),
+  );
+
+  $form['booking_url']['RP-DE']=array(
+    '#type'=>'textfield',
+    '#title'=>t('RP-DE'),
+    '#description'=>t('voorbeeld url'),
+    '#default_value' => variable_get('RP-DE'),
+  );
+  $form['booking_url']['RP-EN']=array(
+    '#type'=>'textfield',
+    '#title'=>t('RP-EN'),
+    '#description'=>t('voorbeeld url'),
+    '#default_value' => variable_get('RP-EN'),
+  );
+  $i = 1;
+
+  return system_settings_form($form);
+}
+
+
+function import_ui_get_parken($hoofd) {
+
+  $parken = array();
+
+  if($hoofd == 0){
+    $naam = 'roompot';
+    $parken[$naam]['url'] = 'http://feeds.roompot.nl/xml/parklist?user=rp_business&pw=rpbus1zc';
+    $parken[$naam]['user'] = 'rp_business';
+    $parken[$naam]['password'] = 'rpbus1zc';
+  }
+  elseif($hoofd = 1){
+    $naam = 'hb';
+    $parken[$naam]['url'] = 'http://feeds.roompot.nl/xml/parklist?user=hb_business&pw=hbb1zz';
+    $parken[$naam]['user'] = 'hb_business';
+    $parken[$naam]['password'] = 'hbb1zz';
+  }
+  else{
+    $naam = 'roompot';
+    $parken[$naam]['url'] = 'http://feeds.roompot.nl/xml/parklist?user=rp_business&pw=rpbus1zc';
+    $parken[$naam]['user'] = 'rp_business';
+    $parken[$naam]['password'] = 'rpbus1zc';
+  }
+
+  $parkids = array();
+  $parkinfo = array();
+
+  foreach ($parken as $park) {
+    $parken_xml = simplexml_load_file($park['url']);
+    $user = $park['user'];
+    $password = $park['password'];
+    foreach ($parken_xml as $park_xml) {
+      if (0 == 0) {
+        $parkids[(int) $park_xml->parkMaxxtonId] = (string) $park_xml->parkName;
+
+        $parkinfo[(int) $park_xml->parkMaxxtonId] = array();
+        $parkinfo[(int) $park_xml->parkMaxxtonId]['parkname'] = (string) $park_xml->parkName;
+        $parkinfo[(int) $park_xml->parkMaxxtonId]['user'] = $user;
+        $parkinfo[(int) $park_xml->parkMaxxtonId]['password'] = $password;
+
+        variable_set('list_park_info', $parkinfo);
+      }
+    }
+  }
+
+  return $parkids;
+}
+
+function import_ui_get_objects($parkid) {
+
+  $park = array();
+  $parken_info = variable_get('list_park_info');
+  $url = 'http://feeds.roompot.nl/xml/parkinfo?parkid=' . $parkid . '&user=' . $parken_info[$parkid]['user'] . '&pw=' . $parken_info[$parkid]['password'];
+
+  $park['name'] = str_replace(' ', '-', (string) $parken_info[$parkid]['parkname']);
+  $park['objects'] = array();
+
+
+  $park_xml = simplexml_load_file($url);
+  $parkobjects = $park_xml->objects;
+  foreach ($parkobjects->object as $parkobject) {
+    $park['objects'][(int) $parkobject->objectId[0]] = (string) $parken_info[$parkid]['parkname'] .' - '. (string) $parkobject->objectName;
+  }
+
+  return $park;
+}

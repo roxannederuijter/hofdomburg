@@ -1,0 +1,28 @@
+# German translation of Feeds XPath Parser (7.x-1.0)
+# Copyright (c) 2014 by the German translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Feeds XPath Parser (7.x-1.0)\n"
+"POT-Creation-Date: 2014-12-13 11:18+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "here"
+msgstr "hier"
+msgid "Feeds"
+msgstr "Newsfeeds"
+msgid "Context"
+msgstr "Kontext"
+msgid "Debug Options"
+msgstr "Optionen zur Fehlerdiagnose"
+msgid "There was an error with the XPath selector: %error"
+msgstr "Es gab einen Fehler mit dem XPath Selektor: %error"
+msgid "%error on line %num. Error code: %code"
+msgstr "%error in Zeile %num.Fehlercode: %code"
+msgid "There was an error parsing the XML document."
+msgstr "Beim Akzeptieren des XML-Dokumentes gab es einen Fehler."

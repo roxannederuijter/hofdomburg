@@ -1,0 +1,8 @@
+name = UH Import
+description = Import parken datums
+core = 7.x
+package = uh
+
+configure = admin/config/content/import
+
+dependencies[] = devel_generate

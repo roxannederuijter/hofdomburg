@@ -1,0 +1,22 @@
+# German translation of Honeypot (7.x-1.17)
+# Copyright (c) 2015 by the German translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Honeypot (7.x-1.17)\n"
+"POT-Creation-Date: 2015-04-19 03:11+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Honeypot"
+msgstr "Honeypot"
+msgid "seconds"
+msgstr "Sekunden"
+msgid "Spam control"
+msgstr "Spamkontrolle"
+msgid "@name comment form"
+msgstr "@name Kommentarformular"

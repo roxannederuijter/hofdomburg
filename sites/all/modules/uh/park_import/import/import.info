@@ -1,0 +1,6 @@
+name = Import
+description = Import parken datums
+core = 7.x
+package = park_import
+
+dependencies[] = import_ui

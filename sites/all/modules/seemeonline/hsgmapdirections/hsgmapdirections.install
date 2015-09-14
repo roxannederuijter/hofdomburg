@@ -1,0 +1,4 @@
+<?php
+function hsgmapdirections_uninstall(){
+  variable_del('hsgmapdirections_disabled');
+}

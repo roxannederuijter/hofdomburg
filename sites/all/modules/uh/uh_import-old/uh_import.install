@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function uh_import_schema() {
+
+  $schema = array();
+
+  $schema['availability'] = array(
+    'description' => 'The base table for the availability entity',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key of the availability entity',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'acco_id' => array(
+        'description' => 'Accomedation id.',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'start_date' => array(
+        'description' => 'availability startdate.',
+        'type' => 'datetime',
+        'mysql_type' => 'DATETIME',
+        'sortable' => TRUE,
+        'views' => TRUE,
+        'not null' => TRUE,
+      ),
+      'period' => array(
+        'description' => 'availability periode.',
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE,
+      ),
+      'price' => array(
+        'description' => 'availability price.',
+        'type' => 'numeric',
+        'size' => 'normal',
+        'not null' => TRUE,
+        'precision' => 10,
+        'scale' => 0,
+      ),
+      'regular_price' => array(
+        'description' => 'availability regular_price',
+        'type' => 'numeric',
+        'size' => 'normal',
+        'not null' => FALSE,
+        'precision' => 10,
+        'scale' => 0,
+      ),
+
+      'booking_url' => array(
+        'description' => 'booking_url regular_price',
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => TRUE,
+      ),
+      'nights' => array(
+        'description' => 'Accomedation id.',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'park_id' => array(
+        'description' => 'park id.',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'inclusive_price' => array(
+        'description' => 'availability price.',
+        'type' => 'numeric',
+        'size' => 'normal',
+        'not null' => TRUE,
+        'precision' => 10,
+        'scale' => 0,
+      ),
+      'inclusive_discount_price' => array(
+        'description' => 'availability regular_price',
+        'type' => 'numeric',
+        'size' => 'normal',
+        'not null' => FALSE,
+        'precision' => 10,
+        'scale' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+
+  return $schema;
+}

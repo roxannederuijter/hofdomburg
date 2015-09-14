@@ -1,0 +1,280 @@
+<?php
+function uh_import_menu() {
+  $items = array();
+
+  $items['admin/config/park-import'] = array(
+    'title' => 'Parken',
+    'description' => 'Configuration for parken',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uh_import_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function uh_import_cron(){
+  uh_import_delete_old_entitys();
+  //uh_import_load_acco_info();
+  //uh_import_clear_search_index();
+}
+
+
+function uh_import_form($form, &$form_state) {
+  $parkids = uh_import_get_parken();
+
+  $form['parken'] = array(
+    '#title' => t('Parks'),
+    '#type' => 'checkboxes',
+    '#description' => t('Select the parken to import.'),
+    '#options' => $parkids,
+    '#default_value' => variable_get('parken', 0),
+  );
+
+
+  $accoids = array();
+
+  foreach (variable_get('parken') as $parkid) {
+    if (!$parkid == 0) {
+      $park = uh_import_get_objects($parkid);
+      $accoids = $accoids + $park['objects'];
+    }
+  }
+
+  $form['accomedaties'] = array(
+    '#title' => t('accomedaties'),
+    '#type' => 'checkboxes',
+    '#description' => t('Select the accos to import.'),
+    '#options' => $accoids,
+    '#default_value' => variable_get('accomedaties', 0),
+  );
+
+  return system_settings_form($form);
+}
+
+
+function uh_import_get_parken() {
+  $parken = array();
+
+  $naam = 'roompot';
+  $parken[$naam]['url'] = 'http://feeds.roompot.nl/xml/parklist?user=rp_business&pw=rpbus1zc';
+  $parken[$naam]['user'] = 'rp_business';
+  $parken[$naam]['password'] = 'rpbus1zc';
+
+
+  $naam = 'hb';
+  $parken[$naam]['url'] = 'http://feeds.roompot.nl/xml/parklist?user=hb_business&pw=hbb1zz';
+  $parken[$naam]['user'] = 'hb_business';
+  $parken[$naam]['password'] = 'hbb1zz';
+
+  $parkids = array();
+  $parkinfo = array();
+
+  foreach ($parken as $park) {
+    $parken_xml = simplexml_load_file($park['url']);
+    $user = $park['user'];
+    $password = $park['password'];
+    foreach ($parken_xml as $park_xml) {
+      if (0 == 0) {
+        $parkids[(int) $park_xml->parkMaxxtonId] = (string) $park_xml->parkName;
+        $parkinfo[(int) $park_xml->parkMaxxtonId] = array();
+        $parkinfo[(int) $park_xml->parkMaxxtonId]['parkname'] = (string) $park_xml->parkName;
+        $parkinfo[(int) $park_xml->parkMaxxtonId]['user'] = $user;
+        $parkinfo[(int) $park_xml->parkMaxxtonId]['password'] = $password;
+
+        variable_set('list_park_info', $parkinfo);
+      }
+    }
+  }
+
+  return $parkids;
+}
+
+function uh_import_get_objects($parkid) {
+
+  $park = array();
+  $parken_info = variable_get('list_park_info');
+  $url = 'http://feeds.roompot.nl/xml/parkinfo?parkid=' . $parkid . '&user=' . $parken_info[$parkid]['user'] . '&pw=' . $parken_info[$parkid]['password'];
+
+  $park['name'] = str_replace(' ', '-', (string) $parken_info[$parkid]['parkname']);
+  $park['objects'] = array();
+
+
+  $park_xml = simplexml_load_file($url);
+  $parkobjects = $park_xml->objects;
+  foreach ($parkobjects->object as $parkobject) {
+    $park['objects'][(int) $parkobject->objectId[0]] = (string) $parkobject->objectName;
+  }
+
+  return $park;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function uh_import_delete_old_entitys() {
+  $results = entity_load('availability');
+  uh_import_setup_delete_entity_batch(array_keys($results));
+}
+
+function uh_import_load_acco_info() {
+  $import_entity = TRUE;
+  if($import_entity == TRUE) {
+    $ids = variable_get('accomedaties', 0);
+    foreach ($ids as $id) {
+      if ($id != 0) {
+
+        $query = new EntityFieldQuery();
+        $query->entityCondition('entity_type', 'node')
+          ->entityCondition('bundle', 'accomodation')
+          ->fieldCondition('field_object_relephant_id', 'value', $id, '=')
+          ->range(0, 1)
+          ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+        $result = $query->execute();
+
+        if (isset($result['node'])) {
+          $acco_id = array_keys($result['node']);
+        }
+
+// set external database.
+        db_set_active('parken');
+// Start select query.
+        $query = db_select('availability', 'p');
+        $query->fields('p', array('acco_id'));
+        $query->fields('p', array('start_date'));
+        $query->fields('p', array('period'));
+        $query->fields('p', array('price'));
+        $query->fields('p', array('regular_price'));
+        $query->fields('p', array('booking_url'));
+        $query->fields('p', array('nights'));
+        $query->fields('p', array('park_id'));
+        $query->fields('p', array('inclusive_price'));
+        $query->fields('p', array('inclusive_discount_price'));
+// Create expression (acts the same as any db value at sql) and use it.
+        $query->condition('p.acco_id', $id, '=');
+        $result = $query->execute();
+
+        $records = array();
+        $i = 0;
+        while ($record = $result->fetchAssoc()) {
+          $records[$i] = $record;
+          $records[$i]['id'] = $acco_id[0];
+          $i++;
+        }
+        db_set_active();
+      }
+    }
+    uh_import_setup_create_entity_batch($records);
+  }
+}
+
+function uh_import_setup_delete_entity_batch($entity_ids) {
+  //Break up all of our data so each process does not time out.
+  $i = 1;
+  $chunks = array_chunk($entity_ids, 20);
+  $operations = array();
+  $count_chunks = count($chunks);
+  //for every chunk, assign some method to run on that chunk of data
+  foreach ($chunks as $chunk) {
+    $i++;
+    $operations[] = array('uh_import_delete_entity_batch',array( $chunk ,'details'=> t('(Deleting chunk @chunk  of  @count)', array('@chunk '=>$i, '@count'=>$count_chunks))));
+  }
+  //put all that information into our batch array
+  $batch = array(
+    'operations' => $operations,
+    'title' => t('Delete old entitys'),
+    'init_message' => t('Initializing'),
+    'error_message' => t('An error occurred'),
+    'progress_message' => t('Processed @current out of @total.'),
+  );
+  batch_set($batch);
+  $batch =& batch_get();
+  $batch['progressive'] = FALSE;
+
+  drush_backend_batch_process();
+
+}
+
+function uh_import_delete_entity_batch($entitys) {
+  entity_delete_multiple('availability', $entitys);
+}
+
+function uh_import_setup_create_entity_batch($records) {
+  //Break up all of our data so each process does not time out.
+  $i = 1;
+  $chunks = array_chunk($records, 20);
+  $operations = array();
+  $count_chunks = count($chunks);
+  //for every chunk, assign some method to run on that chunk of data
+  foreach ($chunks as $chunk) {
+    $i++;
+    $operations[] = array('uh_import_create_entity_batch',array( $chunk ,'details'=> t('(Creating chunk @chunk  of  @count)', array('@chunk '=>$i, '@count'=>$count_chunks))));
+  }
+  //put all that information into our batch array
+  $batch = array(
+    'operations' => $operations,
+    'title' => t('Create entitys'),
+    'init_message' => t('Initializing'),
+    'error_message' => t('An error occurred'),
+    'progress_message' => t('Processed @current out of @total.')
+  );
+  batch_set($batch);
+  $batch =& batch_get();
+
+  $batch['progressive'] = FALSE;
+  drush_backend_batch_process();
+}
+
+function uh_import_create_entity_batch($records) {
+  foreach($records as $record){
+    $entity_type = 'availability';
+    $entity = entity_create($entity_type, array('type' => 'availability'));
+    $wrapper = entity_metadata_wrapper($entity_type, $entity);
+    $wrapper->field_accomedatie->set($record['id']);
+    $wrapper->field_start_date = strtotime($record['start_date']);
+    $wrapper->field_inclusive_discount_price->set($record['inclusive_discount_price']);
+    $wrapper->field_inclusive_price->set($record['inclusive_price']);
+    $wrapper->field_price->set($record['price']);
+    $wrapper->field_regular_price->set($record['regular_price']);
+    $wrapper->field_acco_id->set($record['acco_id']);
+
+    $terms = taxonomy_get_term_by_name($record['period']);
+    if ($terms) {
+      foreach ($terms as $term) {
+        $i = 1;
+        $wrapper->field_period->set($term->tid);
+      }
+    }
+    else {
+      $vid = taxonomy_vocabulary_machine_name_load('period')->vid;
+      taxonomy_term_save((object) array(
+        'name' => $record['period'],
+        'vid' => $vid,
+      ));
+    }
+
+    $wrapper->field_booking_url->url->set($record['booking_url']);
+    $wrapper->field_booking_url->title->set('Boeken');
+    $wrapper->field_nights->set($record['nights']);
+    $wrapper->field_park_id->set($record['park_id']);
+    $wrapper->save();
+  }
+}
+
+function uh_import_clear_search_index(){
+  // Load Search API Index.
+  $search_api_index = search_api_index_load('availability_entity');
+// Clear the index.
+  $search_api_index->clear();
+// Run!
+  search_api_index_items($search_api_index, -1);
+}

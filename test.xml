@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actiebundel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" actie="add" versie="1.0">
+    <referentienummer>2015015</referentienummer>
+    <actiebundelid>40</actiebundelid>
+    <klantnaam>Schroevers</klantnaam>
+    <datumvanaf>08-06-2015</datumvanaf>
+    <datumtot>29-06-2015</datumtot>
+    <totaalprijsinclwaarborg>1443,10</totaalprijsinclwaarborg>
+    <totaalprijsexclwaarborg>1193,10</totaalprijsexclwaarborg>
+    <prijsperpersoon>360,78</prijsperpersoon>
+    <prijsperpersoonpernacht>17,18</prijsperpersoonpernacht>
+    <aantalpersonen>4</aantalpersonen>
+    <periodes>
+        <periode>
+            <datumvanaf>08-06-2015</datumvanaf>
+            <datumtot>29-06-2015</datumtot>
+            <aantalpersonen>4</aantalpersonen>
+            <aantalnachten>21</aantalnachten>
+            <aantalaccommodatie>1</aantalaccommodatie>
+            <totaalprijsinclwaarborg>1443,10</totaalprijsinclwaarborg>
+            <totaalprijsexclwaarborg>1193,10</totaalprijsexclwaarborg>
+            <prijsperpersoon>360,78</prijsperpersoon>
+            <prijsperpersoonpernacht>17,18</prijsperpersoonpernacht>
+            <acties>
+                <actie>
+                    <parknaam>Klein Vink</parknaam>
+                    <accommodatietype>KV6</accommodatietype>
+                    <accommodatieid>385</accommodatieid>
+                    <maanden>
+                        <maand>
+                            <jaar>2015</jaar>
+                            <maandnummer>6</maandnummer>
+                            <aantal>1</aantal>
+                            <prijs>750,00</prijs>
+                            <percentage>45,96</percentage>
+                            <brochureprijs>1387,87</brochureprijs>
+                        </maand>
+                    </maanden>
+                    <extrakosten/>
+                </actie>
+            </acties>
+            <extrakosten>
+                <extrakostenrij>
+                    <omschrijving>Waarborg</omschrijving>
+                    <manierberekenen>Per accommodatie</manierberekenen>
+                    <prijsperstuk>250,00</prijsperstuk>
+                    <aantal>1</aantal>
+                    <totaalexclbtw>250,00</totaalexclbtw>
+                    <btw>0,00</btw>
+                    <totaalinclbtw>250,00</totaalinclbtw>
+                </extrakostenrij>
+                <extrakostenrij>
+                    <omschrijving>Comfortpakket</omschrijving>
+                    <manierberekenen>Per persoon</manierberekenen>
+                    <prijsperstuk>9,00</prijsperstuk>
+                    <aantal>8</aantal>
+                    <totaalexclbtw>72,00</totaalexclbtw>
+                    <btw>6,00</btw>
+                    <totaalinclbtw>76,32</totaalinclbtw>
+                </extrakostenrij>
+                <extrakostenrij>
+                    <omschrijving>Tussenschoonmaak</omschrijving>
+                    <manierberekenen>Per accommodatie</manierberekenen>
+                    <prijsperstuk>30,00</prijsperstuk>
+                    <aantal>3</aantal>
+                    <totaalexclbtw>90,00</totaalexclbtw>
+                    <btw>6,00</btw>
+                    <totaalinclbtw>95,40</totaalinclbtw>
+                </extrakostenrij>
+                <extrakostenrij>
+                    <omschrijving>Eindschoonmaak 8P</omschrijving>
+                    <manierberekenen>Per accommodatie</manierberekenen>
+                    <prijsperstuk>69,00</prijsperstuk>
+                    <aantal>1</aantal>
+                    <totaalexclbtw>69,00</totaalexclbtw>
+                    <btw>6,00</btw>
+                    <totaalinclbtw>73,14</totaalinclbtw>
+                </extrakostenrij>
+                <extrakostenrij>
+                    <omschrijving>Parklasten</omschrijving>
+                    <manierberekenen>Per persoon per nacht</manierberekenen>
+                    <prijsperstuk>2,36</prijsperstuk>
+                    <aantal>84</aantal>
+                    <totaalexclbtw>198,00</totaalexclbtw>
+                    <btw>0,00</btw>
+                    <totaalinclbtw>198,24</totaalinclbtw>
+                </extrakostenrij>
+            </extrakosten>
+        </periode>
+    </periodes>
+</actiebundel> 1

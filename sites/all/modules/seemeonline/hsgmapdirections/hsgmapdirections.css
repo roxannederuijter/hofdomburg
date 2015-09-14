@@ -1,0 +1,31 @@
+.hsgdir {
+	height:300px;
+	width:100%;
+	float:left;
+}
+
+.hsgmapdirections{
+	width:100%;
+	float:left;
+	margin-bottom:10px;
+}
+
+.directions-field-wrapper > *,
+.hsgmapdirections form > *{
+	float:left;
+}
+
+.directions-field{
+	margin:0 10px;
+}
+
+
+.directions-field input{
+	height:22px;
+}
+
+.directions-label{ line-height:25px;}
+
+#legenda{
+	float:left;
+}

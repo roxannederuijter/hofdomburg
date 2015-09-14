@@ -1,0 +1,11 @@
+name = Facet API Date Popup Calendar
+description = Module provide Facet API Date Popup Calendar widget
+dependencies[] = facetapi
+package = Search Toolkit
+core = 7.x
+
+; Facet API plugins
+files[] = plugins/facetapi/query_type_date_per_day.inc
+files[] = plugins/facetapi/widget_date_popup_calendar.inc
+
+

@@ -1,0 +1,341 @@
+<?php
+
+
+function getMapIdFromThemedGmap($result){
+	
+	$result = substr($result, strpos($result, 'id="'));
+	$result = substr($result, 0, strpos($result, " class"));
+	$result = trim($result, 'id="');
+	$result = trim($result, '"');
+	return $result;
+}
+
+/**
+ * Create fields.
+ */
+function hsgmapdirections_create_field($name, $type, $id, $value){
+	$outputPrefix = '<div class="directions-field-wrapper" style="padding: 5px;">';
+	$outputPostfix = "</div>";
+	$fieldname = '<div class="directions-label">' . t($name) . ':</div>';
+	
+	$field = '<div class="directions-field directions-field-' . $type . '">';
+	switch ($type) {
+		case 'text':
+			$field .= '<input type="text" id="' . $id . '" name="' . $name . '" value=""/>';
+			break;
+		case 'select':
+			$field .= '<select id="' . $id . '"  name="' . $name . '">';
+			foreach ($value as $k => $v) {
+				$field .= '<option value="' . $v . '">' . $k . '</option>';
+			}
+			$field .= '</select>';
+			break;
+		case 'hidden':
+			$field .= '<input type="hidden" id="' . $id . '" name="' . $name . '" value="' . $value . '"/>';
+			break;
+		default:
+			$field .= '';
+			break;
+	}
+	
+	$field .= '</div>';
+	
+	
+	if($type === 'hidden'){
+		return $field;
+	}
+	
+	return $outputPrefix . $fieldname . $field . $outputPostfix;
+}
+
+/**
+ * Creates the Directions form.
+ */
+function hsgmapdirections_create_form($markers, $mapID){
+	$formHeader = '<div class="hsgmapdirections"><form action="#" onsubmit="loadDirections(document.getElementById(\'fromAddress\').value, document.getElementById(\'toAddress\').value, \'' . $mapID . '\'); return false">';
+	$buttonvalue = t("Print de route");
+  $formFooter = '</form><form><input type="button" value="'.$buttonvalue.'"
+onclick="window.print();return false;" style="display: block; float: right; padding: 5px;"/></form></div>';
+	
+	
+	if(isset($markers) && count($markers) > 0){
+		foreach ($markers as $key => $value) {
+			$latlong[$value['locationname']] = $value['latitude'] . ',' . $value['longitude'];
+		}
+	}
+	
+	$fields[] = hsgmapdirections_create_field(t("Start location"), "text", "fromAddress", '');
+	
+	if(isset($latlong) && count($latlong > 0)){
+		if(count($latlong) > 1){
+			$fields[] = hsgmapdirections_create_field("Destination", "select", "toAddress", $latlong);
+		}
+		else{
+			$keys = array_keys($latlong);
+			$fields[] = hsgmapdirections_create_field("Destination", "hidden", "toAddress", $latlong[$keys[0]]);
+		}
+	}
+	else{
+		$fields[] = hsgmapdirections_create_field("Destination", "text", "toAddress", '');
+	}
+
+	$fields[] = '<input name="submit" type="submit" value="' . t('Get Directions') . '" style="padding: 5px;" />';
+
+	return $formHeader . implode('', $fields) . $formFooter;
+}
+
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function hsgmapdirections_field_formatter_info() {
+  $info = array(
+    'location_map_with_directions' => array(
+      'label' => t('Map with directions'),
+      'field types' => array('location'),
+    ),
+  );
+  
+  return $info;
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ * @Todo: This.
+ */
+function hsgmapdirections_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $field['settings']['location_settings'];
+  $hide = (isset($settings['display']['hide'])) ? array_keys(array_filter($settings['display']['hide'])) : array();
+
+  switch ($display['type']) {
+    case 'location_map_with_directions':
+		$element[0]['#theme'] = 'hsgmapdirections_map_with_directions';
+        $element[0]['#locations'] = $items;
+        $element[0]['#hide'] = $hide;
+        $element[0]['#field'] = $field;
+        $element[0]['#instance'] = $instance;
+		$element[0]['#entity'] = $entity;
+      break;
+  }
+  return $element;
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function hsgmapdirections_theme() {
+  return array(
+    'hsgmapdirections_map_with_directions' => array(
+      'variables' => array(
+        'locations' => NULL,
+        'field' => NULL,
+        'instance' => NULL,
+        'entity' => NULL,
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Wrap the gmap with the directions form and legenda
+ */
+function hsgmapdirections_wrap_content($content, $markers) {
+	drupal_add_js(drupal_get_path('module', 'hsgmapdirections') .'/hsgmapdirections.js');
+	drupal_add_css(drupal_get_path('module', 'hsgmapdirections') .'/hsgmapdirections.css');
+	$formHTML = hsgmapdirections_create_form($markers, getMapIdFromThemedGmap($content));
+	$legendHTML = '<div id="legenda"></div>';
+	return $formHTML . $content . $legendHTML;
+}
+
+
+/**
+ * Generate a GMap map for one or more location field values.
+ *
+ * Mostly just cut and paste from theme_location_cck_field_map
+ */
+function theme_hsgmapdirections_map_with_directions($variables) {
+  $locations = $variables['locations'];
+  $field = $variables['field'];
+  $instance = $variables['instance'];
+  $entity = $variables['entity'];
+
+  $allowrender = true;
+	$disabledfields = variable_get('hsgmapdirections_disabled', array());
+	if(isset($disabledfields[$entity->nid][$field['field_name']])){
+		if($disabledfields[$entity->nid][$field['field_name']] === true){
+			$allowrender = false;
+		}
+	}
+  
+  $count = 0;
+  $content = '';
+  foreach ($locations as $location) {
+    if (location_has_coordinates($location)) {
+	  $count++;
+	  $markername = isset($field['settings']['gmap_marker']) ? $field['settings']['gmap_marker'] : 'drupal';
+	  $markers[] = array(
+	    'latitude' => $location['latitude'],
+	    'longitude' => $location['longitude'],
+	    'locationname' => $location['name'],
+	    'markername' => $markername,
+	    'offset' => $count-1,
+	    'text' => theme('location_cck_field_popup', array('location' => $location, 'instance' => $instance)),
+	  );
+	}
+  }
+
+  if (!empty($markers)) {
+    $macro = !empty($field['settings']['gmap_macro']) ? $field['settings']['gmap_macro'] : '[gmap ]';
+	
+	// Alter marker text
+	foreach($markers as $key => $marker){
+		$marker['text'] = '<h4>' . $marker['locationname'] . '</h4>';
+		$markers[$key] = $marker;
+	}
+	
+	// prepare settings and attributes
+	$settings = gmap_defaults();
+	$attributes = array();
+	if($allowrender){
+		$attributes['class'] = array('hsgdir', 'directions');
+		$settings['width'] = '';
+		$settings['height'] = '';
+	}
+	$settings['behavior']['autozoom'] = 1;
+	$settings['latitude'] = $markers[0]['latitude'];
+    $settings['longitude'] = $markers[0]['longitude'];
+    $settings['markers'] = $markers;
+	$settings['id'] = gmap_get_auto_mapid();
+    $map = array_merge($settings, gmap_parse_macro($macro));
+
+
+    // Render a map element.
+    $location_map = array(
+      '#type' => 'gmap',
+      '#attributes' => $attributes,
+      '#gmap_settings' => $map,
+    );
+    $content = drupal_render($location_map);
+  }
+
+
+	if($allowrender){
+		if(!isset($markers)){
+			$markers = array();
+		}
+		 return hsgmapdirections_wrap_content($content, $markers);
+	}
+	
+	return $content;
+}
+
+function hsgmapdirections_find_location_fields_with_directons_formatter($bundle, $nodetype){
+		$fields = field_info_fields();
+		$locationfields = array();
+		$directionFormattedFields = array();
+		
+		// Look for location fields that are part of this bundle.
+		foreach ($fields as $fieldname => $field) {
+			if($field['type'] === 'location'){
+				if(isset($field['bundles']['node']) && count($field['bundles']['node']) > 0){
+					if(in_array($nodetype, $field['bundles']['node'])){
+						$locationfields[] = $fieldname;
+					}
+				}
+			}
+		}
+		
+		// Check if this field uses the hsgmapdirections_map_with_directions formatter.
+		// if it does, add a checkbox wich allows the user to disable the directions formatter.
+		if(count($locationfields) > 0){
+			foreach ($locationfields as $key => $fieldname) {
+				$fieldinfo = field_info_instance('node', $fieldname, $bundle);
+				foreach ($fieldinfo['display'] as $displayname => $display) {
+					if($display['type'] === 'location_map_with_directions'){	
+						$directionFormattedFields[] = $fieldname;
+					}
+				}
+			}
+		}
+		
+		
+		return $directionFormattedFields;
+}
+
+
+
+/*
+ * Implements hook_form_alter()
+ */
+function hsgmapdirections_form_alter(&$form, $form_state, $form_id){
+	if(isset($form['#node_edit_form']) && $form['#node_edit_form'] === true){
+		$node = $form['#node'];
+		
+		$directionFormattedFields = hsgmapdirections_find_location_fields_with_directons_formatter($form['#bundle'], $node->type);
+		
+		if(count($directionFormattedFields) > 0 ){
+			// Create new form group
+			 $form['hsgmapdirections'] = Array(
+			 	'#type' => 'fieldset',
+			    '#access' => TRUE,
+			    '#title' => 'Holidayspot gmap directions settings',
+			    '#description' => t('Use these checkboxes to disable directions for the fields using them.'),
+				'#collapsible' => TRUE,
+			    '#collapsed' => TRUE,
+			    '#group' => 'additional_settings',
+			    '#attributes' =>  Array(
+						'class' => array('node-form-options'),
+					),
+				'#attached' => Array(
+						'js' => array('modules/node/node.js'),
+					),
+				);
+				
+			// add checboxes to the group
+			foreach($directionFormattedFields as $fieldname){
+				$default = false;
+				$var = variable_get('hsgmapdirections_disabled', false);
+				if($var !== false){
+					if(isset($node->nid) && isset($var[$node->nid][$fieldname])){
+						$default = $var[$node->nid][$fieldname];
+					}
+				}
+			
+				$form['hsgmapdirections'][$fieldname.'directions_disable'] = array(
+									  '#type' => 'checkbox',
+									  '#title' => t('Disable directions for ') . $fieldname,
+									  '#default_value' => $default,
+									);
+			}
+		}
+	}
+	
+}
+
+/*
+ * Implements hook_node_submit
+ */
+function hsgmapdirections_node_submit($node, $form, &$form_state){
+	if($form_state['clicked_button']['#value'] !== 'Preview'){
+		$directionFormattedFields = hsgmapdirections_find_location_fields_with_directons_formatter($form['#bundle'], $node->type);
+	
+		foreach($directionFormattedFields as $fieldname){
+			$lang = $form[$fieldname]['#language'];
+			$settings = variable_get('hsgmapdirections_disabled', array());
+				
+			$checked = $form['hsgmapdirections'][$fieldname.'directions_disable']['#checked'];
+			if($checked){
+				$settings[$node->nid][$fieldname] = $checked;
+			}
+			else{
+				unset($settings[$node->nid][$fieldname]);
+			}
+			
+			variable_set('hsgmapdirections_disabled', $settings);
+		}
+	}
+}
