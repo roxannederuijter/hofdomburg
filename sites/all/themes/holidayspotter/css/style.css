@@ -1893,7 +1893,7 @@ table .mini-day-on a:hover {
   margin-bottom: 10px;
   color: #1fb4e5; }
 
-#block-views-faciliteiten-block-2 .view-header h2 {
+#block-views-faciliteiten-block-2 .view-header h2, #block-views-faciliteiten-block-3 .view-header h2 {
   color: #fff;
   text-transform: none;
   text-align: center; }
