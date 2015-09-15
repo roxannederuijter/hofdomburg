@@ -1902,4 +1902,8 @@ table .mini-day-on a:hover {
 .field-name-field-text h2 {
   text-align: left; }
 
+.block-uh-custom-search-filter-form .btn-primary {
+  background-color: #1fb4e5;
+  float: right; }
+
 /*# sourceMappingURL=style.css.map */
