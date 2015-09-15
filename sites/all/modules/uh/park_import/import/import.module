@@ -170,7 +170,7 @@ function _create_entity($record) {
     }
     if(variable_get('RP-DE', 0) !== 0){
       $wrapper->field_booking_url_de->url->set(str_replace('https://boeken.roompot.nl/roompot/object',variable_get('RP-DE', 0),$record['booking_url']));
-      $wrapper->field_booking_url_de->title->set('Buch');
+      $wrapper->field_booking_url_de->title->set('Buchen');
     }
   }
 
