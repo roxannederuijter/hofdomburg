@@ -863,9 +863,9 @@ table .mini-day-on a:hover {
   border-radius: 3px;
   display: inline-block;
   border-bottom: 1px solid;
-  background-color: $groen;
+  background-color: $yellow;
 
-  border-color: $groen;
+  border-color: $yellow;
   text-align: left;
   font-size: 16px;
   background-image: url("../img/btn-icon-arrow.png");
@@ -882,7 +882,7 @@ table .mini-day-on a:hover {
 .calendar_tooltips-field_booking_url_de-value a:focus,
 .calendar_tooltips-field_booking_url-value a:hover,
 .calendar_tooltips-field_booking_url-value a:focus {
-  background-color: $pink;
+  background-color: $blue;
   text-decoration: none;
 }
 
