@@ -1904,6 +1904,8 @@ table .mini-day-on a:hover {
 
 .block-uh-custom-search-filter-form .btn-primary {
   background-color: #1fb4e5;
-  float: right; }
+  float: right;
+  padding: 2px 23px;
+  border-radius: 7px; }
 
 /*# sourceMappingURL=style.css.map */
