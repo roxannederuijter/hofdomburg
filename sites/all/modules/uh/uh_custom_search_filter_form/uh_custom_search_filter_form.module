@@ -104,7 +104,7 @@ function _get_availability(){
     if(!isset($records['maxpersonsOptions'][$record["field_maximum_persons_value"]])){$totals["maxpersonsOptions"][$record["field_maximum_persons_value"]] = 0;}
 
     $records['records'][] = $record; // Not needed anymore for searchfields
-    $records['periodOptions'][$record["field_period_tid"]] = array("value" => $record["field_period_tid"], "label" => $record["name"], "weight" => $record["weight"]);
+    $records['periodOptions'][$record["field_period_tid"]] = array("value" => $record["field_period_tid"], "label" => t($record["name"]), "weight" => $record["weight"]);
     $records['maxpersonsOptions'][$record["field_maximum_persons_value"]] = array("value" => $record["field_maximum_persons_value"], "label" => $record["field_maximum_persons_value"]);
     $records['startdateOptions'][$record["field_start_date_value"]] = array("value" => $record["field_start_date_value"], "label" => $record["field_start_date_value"]);
 
